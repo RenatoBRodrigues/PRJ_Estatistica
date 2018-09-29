@@ -1,0 +1,326 @@
+---
+title: "Trabalho Estatistica"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+install.packages("psych")
+install.packages("plotly")
+install.packages("gmodels")
+install.packages("corrgram")
+
+#
+```{r}
+# mostrar atÈ 2 casas decimais
+options("scipen" = 2)
+
+# Ler arquivo csv
+
+
+Vinhos <- read.csv2("Desktop/BaseWineRedeWhite2018.csv", row.names=1)
+
+```
+
+```{r}
+#Vinhos <- BaseWine_Red_e_White2018
+#fix(Vinhos)
+#mostrar as vari·veis
+str(Vinhos)
+#mostra as vari·veis
+names(Vinhos)
+
+#XX Variáveis e muita informação
+
+```
+
+
+```{r}
+attach(Vinhos)
+
+# FrequÍncia absoluta 
+table(as.factor(Vinhos$quality), Vinhos$Vinho, useNA = "ifany")
+
+table(as.factor(Vinhos$quality), Vinhos$Vinho)
+```
+
+```{r}
+Quality <- split(Vinhos, Vinhos$Vinho)
+
+t.test(Quality$WHITE$quality, Quality$RED$quality)
+
+```
+```{r}
+# 2-Way Cross Tabulation
+library(gmodels)
+CrossTable(as.factor(Vinhos$quality), Vinhos$Vinho) 
+``` 
+
+```{r}
+
+summary(Vinhos)
+
+```
+
+```{r}
+
+aggregate(Vinho,
+          by = list( Vinho),
+          FUN = mean)
+
+mean(Vinhos$fixedacidity) # mÈdia
+
+median(Vinhos$fixedacidity) # mÈdiana
+
+quantile(Vinhos$fixedacidity,type=4)  # Quartis
+
+quantile(Vinhos$fixedacidity,.65,type=4) # exato percentil
+
+range(Vinhos$fixedacidity)  # amplitude
+
+diff(range(Vinhos$fixedacidity)) #diferenÁa entre o maior e o menor valor
+
+min(Vinhos$fixedacidity)  # valor mÌnimo de x
+
+max(Vinhos$fixedacidity)  # valor m·ximo de x
+
+var(Vinhos$fixedacidity) # para obter a vari‚ncia
+
+sd(Vinhos$fixedacidity)  # para obter o desvio padr„o
+
+CV_fixedacidity<-sd(Vinhos$fixedacidity)/mean(Vinhos$fixedacidity)*100  # para obter o coefiiente de variaÁ„o
+CV_fixedacidity
+
+```
+
+
+
+```{r}
+
+#comando para gerar em 3 linhas e 4 colunas os histogramas
+par (mfrow=c(3,4))
+hist(fixedacidity)
+hist(volatileacidity)
+hist(citricacid )
+hist(residualsugar)
+hist(chlorides)
+hist(freesulfurdioxide)
+hist(totalsulfurdioxide)
+hist(density)
+hist(pH)
+hist(sulphates)
+hist(alcohol)
+hist(quality)
+```
+
+```{r}
+
+
+hist(quality, col=c("pink"), col.main="darkgray", prob=T)
+```
+
+```{r}
+
+attach(Vinhos)
+
+#comando para gerar em 3 linhas e 4 colunas os histogramas
+par (mfrow=c(3,4))
+boxplot(fixedacidity, main='fixedacidity')
+boxplot(volatileacidity , main='volatileacidity')
+boxplot(citricacid , main='citricacid')
+boxplot(residualsugar, main='residualsugar')
+boxplot(chlorides, main='chlorides')
+boxplot(freesulfurdioxide, main='freesulfurdioxide')
+boxplot(totalsulfurdioxide, main='totalsulfurdioxide')
+boxplot(density, main='density')
+boxplot(pH, main='pH')
+boxplot(sulphates, main='sulphates')
+boxplot(alcohol, main='alcohol')
+boxplot(Vinhos$quality, main='quality')
+```
+
+
+```{r}
+
+boxplot(quality ~ Vinho, main='quality')
+
+boxplot(fixedacidity ~ Vinho, main='fixedacidity',col=c('red','blue'))
+boxplot(volatileacidity ~ Vinho , main='volatileacidity')
+boxplot(citricacid ~ Vinho, main='citricacid')
+boxplot(residualsugar ~ Vinho, main='residualsugar',col=c('red','blue'))
+boxplot(chlorides ~ Vinho, main='chlorides')
+boxplot(freesulfurdioxide ~ Vinho, main='freesulfurdioxide')
+boxplot(totalsulfurdioxide ~ Vinho, main='totalsulfurdioxide')
+boxplot(density ~ Vinho, main='density')
+boxplot(pH ~ Vinho, main='pH')
+boxplot(sulphates ~ Vinho, main='sulphates')
+boxplot(alcohol ~ Vinho, main='alcohol')
+```
+
+```{r}
+
+# Gr·fico de dispers„o ( pch=caracter, lwd=largura)
+
+plot(freesulfurdioxide~totalsulfurdioxide)
+plot(freesulfurdioxide~totalsulfurdioxide, pch=1, lwd=3)
+
+plot(freesulfurdioxide~totalsulfurdioxide)
+abline(v=mean(freesulfurdioxide), col="red")
+abline(h=mean(totalsulfurdioxide), col="green")
+
+```
+
+
+```{r}
+
+attach(Vinhos)
+Vinhos$fx_redSugar <- cut(residualsugar,breaks=c(0,10,20,30,max(residualsugar)))  
+Vinhos$fx_redSugar  
+str(Vinhos)
+CrossTable( Vinhos$fx_redSugar , Vinhos$Vinho) 
+
+```
+
+
+```{r}
+
+attach(Vinhos)
+
+
+library(psych)
+
+describe(Vinhos)
+
+# describe
+# A data.frame of the relevant statistics:
+# item name
+# item number
+# number of valid cases
+# mean
+# standard deviation
+# trimmed mean (with trim defaulting to .1)
+# median (standard or interpolated
+# mad: median absolute deviation (from the median)
+# minimum
+# maximum
+# skew
+# kurtosis
+# standard error
+
+
+summary(Vinhos)
+white <- subset(Vinhos, Vinho=="WHITE", select=c(quality,fixedacidity,volatileacidity,citricacid,residualsugar,
+                                                 chlorides,freesulfurdioxide,totalsulfurdioxide,density,pH,
+                                                 sulphates,alcohol))
+
+```
+
+
+```{r}
+
+#EstatÌsticas descritivas
+summary(white)
+ 
+str(white)
+
+```
+
+
+```{r}
+
+attach(white)
+ 
+
+#EstatÌsticas descritivas
+
+par (mfrow=c(3,4))
+boxplot(fixedacidity, main='fixedacidity')
+boxplot(volatileacidity , main='volatileacidity')
+boxplot(citricacid , main='citricacid')
+boxplot(residualsugar, main='residualsugar')
+boxplot(chlorides, main='chlorides')
+boxplot(freesulfurdioxide, main='freesulfurdioxide')
+boxplot(totalsulfurdioxide, main='totalsulfurdioxide')
+boxplot(density, main='density')
+boxplot(pH, main='pH')
+boxplot(sulphates, main='sulphates')
+boxplot(alcohol, main='alcohol')
+boxplot(quality, main='quality')
+```
+
+
+```{r}
+
+boxplot.stats(white$residualsugar)
+
+
+AIQ_residualsugar<-quantile(white$residualsugar,.75,type=2)-quantile(white$residualsugar,.25,type=2)
+AIQ_residualsugar
+
+limsup_residualsugar= quantile(white$residualsugar,.75,type=4)+1.5*AIQ_residualsugar
+limsup_residualsugar
+liminf_residualsugar= quantile(white$residualsugar,.25,type=2)-1.5*AIQ_residualsugar
+liminf_residualsugar
+
+```
+
+
+```{r}
+
+#excluir outliers
+
+plot(quality~residualsugar)
+
+white1<-subset(white, residualsugar<=40)   
+
+#fix(white1)
+
+
+```
+
+
+```{r}
+
+attach(white1)
+
+summary(white1)
+
+plot(residualsugar,alcohol)
+abline(v=mean(residualsugar), col="red")
+abline(h=mean(alcohol), col="green")
+
+
+```
+
+
+
+```{r}
+# matriz de correlaÁıes
+matcor <- cor(white1)
+print(matcor, digits = 2)
+
+```
+
+```{r}
+
+#library(corrgram)
+#corrgram(matcor, type = "cor", lower.panel = panel.shade, upper.panel = panel.pie)
+
+panel.cor <- function(x, y, digits=2, prefix ="", cex.cor,
+                      ...)  {
+  usr <- par("usr")
+  on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y , use = "pairwise.complete.obs")
+  txt <- format(c(r, 0.123456789), digits = digits) [1]
+  txt <- paste(prefix, txt, sep = "")
+  if (missing(cex.cor))
+    cex <- 0.8/strwidth(txt)
+  # abs(r) È para que na saÌda as correlaÁıes ficam proporcionais
+  text(0.5, 0.5, txt, cex = cex * abs(r))
+}
+#pdf(file = "grafico.pdf")
+pairs(white1, lower.panel=panel.smooth, upper.panel=panel.cor)
+
+```
+

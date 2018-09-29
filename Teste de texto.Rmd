@@ -1,0 +1,10 @@
+---
+title: "Teste de texto"
+output: html_document
+---
+
+#### Equipe:
+#####Carlos Alberto Figueiredo - RM330568
+#####  Daiana Cristina Zanelli Mota - RM330722
+#####  Diogo Silva Rocha - RM330717 #
+#####  Renato Belandrino Rodrigues - RM330579

@@ -1,0 +1,455 @@
+---
+title: "Trabalho Estatistica"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+### Equipe:
+#####Carlos Alberto Figueiredo - RM330568
+#####  Daiana Cristina Zanelli Mota - RM330722
+#####  Diogo Silva Rocha - RM330717 
+#####  Renato Belandrino Rodrigues - RM330579
+
+
+
+install.packages("psych")
+install.packages("plotly")
+install.packages("gmodels")
+install.packages("corrgram")
+
+#
+```{r}
+# mostrar atÈ 2 casas decimais
+options("scipen" = 2)
+
+# Ler arquivo csv
+
+
+Vinhos <- read.csv2("BaseWineRedeWhite2018.csv", row.names=1)
+
+```
+
+```{r}
+#Vinhos <- BaseWine_Red_e_White2018
+#fix(Vinhos)
+#mostrar as vari·veis
+#str(Vinhos)
+#mostra as vari·veis
+names(Vinhos)
+
+#XX Variáveis e muita informação
+
+```
+
+
+```{r}
+attach(Vinhos)
+
+# FrequÍncia absoluta 
+table(as.factor(Vinhos$quality), Vinhos$Vinho, useNA = "ifany")
+
+table(as.factor(Vinhos$quality), Vinhos$Vinho)
+```
+Análise:
+
+Avaliando as duas tabelas de frequência das notas/qualiade que comparam os vinhos tintos e brancos, vemos que não exsitem valores "brancos/NA" já que as duas tabelas apresentam as mesmas frequências.
+
+Olhando os valores entre as duas tabelas, testamos a hipótese da resposta de qualidade ser diverente entre os vinhos Brancos e Tintos.
+Para isso fizemos um Teste para duas amostras
+
+```{r}
+Quality <- split(Vinhos, Vinhos$Vinho)
+
+t.test(Quality$WHITE$quality, Quality$RED$quality)
+
+```
+Análise:
+
+A partir do valor do p-value e risco alfa máximo de 5%, podemos dizer que os vinhos Brancos e Tintos tem valores médios de notas diferentes, já que o p-value < 2.2e-16
+
+```{r}
+# 2-Way Cross Tabulation
+library(gmodels)
+CrossTable(as.factor(Vinhos$quality), Vinhos$Vinho) 
+``` 
+Análise:
+
+A partir da tabela cruzada entre tipo do vinho (Branco e Tinto) e as notas de qualidade, podemos perceber a maior frequencia geral é de notas 6 (43,7%).
+
+Mas olhando para cada tipo de vinho individualmente, a nota 6 é mais frequente para o vinho branco(44,9%), enquanto a nota mais frenquente para o vinho tinto é 5 (42,6%), o que ajuda a confirmar a diferença entre os vinhos, com relação as notas de qualidade.
+
+
+
+```{r}
+
+summary(Vinhos)
+
+```
+Análise:
+
+Olhando as estatísticas básicas de todas as proprieddes, podemos perceber alguns pontos:
+
+- Médias próximas as medianas, que indica possível simetria nas distribuições para: fixedacidity, volatileacidity, citricacid, chlorides, freesulfurdioxide, totalsulfurdioxide, density, pH, sulphates, alcohol e quality.
+
+- Avaliando os valores máximos e mínimos, temos indícios de outliers para: citricacid (mínimo e máximo), residualsugar (máximo), chloride (máximo), freesulfurdioxide (máximo), sulphates (máximo). 
+
+```{r}
+
+
+aggregate (Vinhos,
+           by = list(Vinho),
+           FUN =  "mean")
+```
+Análise:
+
+Função retorna a media de todas as vaiáveis numéricas para os vinhos Brancos e Tintos
+Pontos que chamam a atenção:
+
+- residualsugar é muito maior para os brancos apesar do alcohol ter valores próximos.
+
+- freesulfurdioxide e totalsulfurdioxide é maior nos vinhos brancos que nos tintos. Este conservante também serve para previnir o escurecimento dos vinhos. Por isso, talvez, sua maior concentração nos Brancos.
+
+O cometário "argument is not numeric or logical: returning NAargument is not numeric or logical: returning NA" é devido a variável vinho que não é numérica
+
+```{r}
+
+
+mean(Vinhos$fixedacidity) # mÈdia
+
+median(Vinhos$fixedacidity) # mÈdiana
+
+quantile(Vinhos$fixedacidity,type=4)  # Quartis
+
+quantile(Vinhos$fixedacidity,.65,type=4) # exato percentil
+
+range(Vinhos$fixedacidity)  # amplitude
+
+diff(range(Vinhos$fixedacidity)) #diferenÁa entre o maior e o menor valor
+
+min(Vinhos$fixedacidity)  # valor mÌnimo de x
+
+max(Vinhos$fixedacidity)  # valor m·ximo de x
+
+var(Vinhos$fixedacidity) # para obter a vari‚ncia
+
+sd(Vinhos$fixedacidity)  # para obter o desvio padr„o
+
+CV_fixedacidity<-sd(Vinhos$fixedacidity)/mean(Vinhos$fixedacidity)*100  # para obter o coefiiente de variaÁ„o
+CV_fixedacidity
+
+```
+Análise:
+
+As funções retornam estaísticas decritivas para a variavel fixedacidity, inclusive o Coeficiente de Variação (CV).
+
+CV = Em teoria das probabilidades e estatística, o coeficiente de variação (CV), também conhecido como desvio padrão relativo (DPR), é uma medida padronizada de dispersão de uma distribuição de probabilidade ou de uma distribuição de frequências. É frequentemente expresso como uma porcentagem, sendo definido como a razão do desvio padrão pela média  (ou seu valor absoluto. O CV ou DPR é amplamente usado em química analítica para expressar a precisão e a repetitividade de um ensaio. Também é comumente usado em campos como engenharia e física quando se fazem estudos de garantia de qualidade e avaliações de repetitividade e reprodutibilidade. O CV também é usado por economistas e investidores em modelos econômicos e na determinação da volatilidade de um valor mobiliário. Fonte: Wikipédia
+
+
+```{r}
+
+#comando para gerar em 3 linhas e 4 colunas os histogramas
+par (mfrow=c(3,4))
+hist(fixedacidity)
+hist(volatileacidity)
+hist(citricacid )
+hist(residualsugar)
+hist(chlorides)
+hist(freesulfurdioxide)
+hist(totalsulfurdioxide)
+hist(density)
+hist(pH)
+hist(sulphates)
+hist(alcohol)
+hist(quality)
+```
+Análise:
+
+Avaliando os histogrmas, alguns pontos chamam a atenção:
+
+- As escalas estão bem abertas, indicando a presença de Outliers, principalmente para: volatileacidity, citricacid, chlorides, freesulfurdioxide
+
+- Distribuições assimetricas, com mínimos limitados pelo valor zero, por exemplo: volatileacidity, residualsugar, chlorides, freesulfurdioxide
+
+```{r}
+
+
+hist(quality, col=c("pink"), col.main="darkgray", prob=T)
+```
+ Análise:
+ 
+- O histograma da quality, por ter valores inteiros, o histograma parece "dentado" mas que não invalida a análise de uma distribuição simétrica, possivelmente Normal
+```{r}
+
+attach(Vinhos)
+
+#comando para gerar em 3 linhas e 4 colunas os histogramas
+par (mfrow=c(3,4))
+boxplot(fixedacidity, main='fixedacidity')
+boxplot(volatileacidity , main='volatileacidity')
+boxplot(citricacid , main='citricacid')
+boxplot(residualsugar, main='residualsugar')
+boxplot(chlorides, main='chlorides')
+boxplot(freesulfurdioxide, main='freesulfurdioxide')
+boxplot(totalsulfurdioxide, main='totalsulfurdioxide')
+boxplot(density, main='density')
+boxplot(pH, main='pH')
+boxplot(sulphates, main='sulphates')
+boxplot(alcohol, main='alcohol')
+boxplot(Vinhos$quality, main='quality')
+```
+Análise:
+
+As análises dos Box Plots validam as que já fizemos para os histogramas.
+
+Apesar de todos os Box Plots apresentarem Outliers, que pode ser efeito dos tamanhos de amostra, os BoxPlots com maiores quantidade de outliers são: volatileacidity, citricacid, chlorides, freesulfurdioxide. citricacid, freesulfurdioxide e alcohol com valores pontuais bem distantes da distribuição. Valeria uma melhor avaliação destes pontos de medidas para verificação se realmente são pontos fora da curva esperada. 
+
+Distribuições assimetricas, com principal atenção para residualsugar, onde a assimentria se destaca na forma da caixa de dos bigodes do Box Plot. Mediana deslocada para o Q1 e bigode inferior bem menor que o superior.
+
+```{r}
+
+boxplot(quality ~ Vinho, main='quality')
+
+boxplot(fixedacidity ~ Vinho, main='fixedacidity',col=c('red','blue'))
+boxplot(volatileacidity ~ Vinho , main='volatileacidity')
+boxplot(citricacid ~ Vinho, main='citricacid')
+boxplot(residualsugar ~ Vinho, main='residualsugar',col=c('red','blue'))
+boxplot(chlorides ~ Vinho, main='chlorides')
+boxplot(freesulfurdioxide ~ Vinho, main='freesulfurdioxide')
+boxplot(totalsulfurdioxide ~ Vinho, main='totalsulfurdioxide')
+boxplot(density ~ Vinho, main='density')
+boxplot(pH ~ Vinho, main='pH')
+boxplot(sulphates ~ Vinho, main='sulphates')
+boxplot(alcohol ~ Vinho, main='alcohol')
+```
+Análise:
+
+Os Box Plots para todas as características, agora comparando os vinhos brancos e tintos podem servir para entender características que podem distinguir entre estes dois tipos e vinhos, como já fizemos com a quality, usando o teste de hipótese.
+
+Olhando os Box Plots, outras características que podem ser diferentes por tipo de vinho são: volatileacidity, chlorides, freesulfurdioxide e totalsulfurdioxide (já comentado nas estatísticas descritivas)
+
+
+```{r}
+
+# Gr·fico de dispers„o ( pch=caracter, lwd=largura)
+
+plot(freesulfurdioxide~totalsulfurdioxide)
+plot(freesulfurdioxide~totalsulfurdioxide, pch=1, lwd=3)
+
+plot(freesulfurdioxide~totalsulfurdioxide)
+abline(h=mean(freesulfurdioxide), col="red")
+abline(v=mean(totalsulfurdioxide), col="green")
+
+```
+Análise:
+
+O Gráfico de dispersão mostra a relação de previsão entre as variáveis.
+Neste caso entre freesulfurdioxide e totalsulfurdioxide.
+
+Estas variáveis aparentam ter uma correlação forte (núvem de pontos com pouca dispersão) e positiva (inclinação positiva/coeficiente angular > 0), indicando que a partir da informação sobre totalsulfurdioxide pode prever o valor de freesulfurdioxide, com boa acuracidade.
+
+A linha verde representa a média do totalsulfurdioxide e a vermelha a média do freesulfurdioxide. O ponto onde onde as retas se encontram é um dos pontos que fará parte da regressão linear entre as variáveis e da uma ideia de centramento desta relação
+
+```{r}
+
+attach(Vinhos)
+Vinhos$fx_redSugar <- cut(residualsugar,breaks=c(0,10,20,30,max(residualsugar)))  
+Vinhos$fx_redSugar  
+str(Vinhos)
+CrossTable( Vinhos$fx_redSugar , Vinhos$Vinho) 
+
+```
+Análise:
+
+Olahndo os intervalos de resíduos de açucar (faixas de 10 em 10), podemos ver que a maior concentração esta na faixa entre 0 e 10 (81,5%)
+
+O mesmo comprtamento se aplica se olharmos por tipo de vinho: Brancos (75,6%) e tintos (99,3%). O que indica que os vinhos tintos tem menos açucar, pois sua concentração esta na faixa de 0 a 10 (faixa inicial) de concentração de resíduo de açucar. E os brancos apresentam maiores concetrações nas faixas superiores: Faixa de 10 a 20, Brancos (24%) x Tintos (0,7%) 
+
+
+```{r}
+
+attach(Vinhos)
+
+
+library(psych)
+
+describe(Vinhos)
+
+# describe
+# A data.frame of the relevant statistics:
+# item name
+# item number
+# number of valid cases
+# mean
+# standard deviation
+# trimmed mean (with trim defaulting to .1)
+# median (standard or interpolated
+# mad: median absolute deviation (from the median)
+# minimum
+# maximum
+# skew
+# kurtosis
+# standard error
+
+
+summary(Vinhos)
+white <- subset(Vinhos, Vinho=="WHITE", select=c(quality,fixedacidity,volatileacidity,citricacid,residualsugar,
+                                                 chlorides,freesulfurdioxide,totalsulfurdioxide,density,pH,
+                                                 sulphates,alcohol))
+
+```
+
+Análise:
+
+Criamos um Dataset para os vinhos Brancos, com todas as variáveis usadas anteriormente
+
+
+```{r}
+
+#EstatÌsticas descritivas
+summary(white)
+ 
+str(white)
+
+```
+
+Análise:
+
+Olhando as estatísticas básicas de todas as proprieddes dos vinhos brancos, podemos perceber alguns pontos:
+
+- Médias próximas as medianas, que indica possível simetria nas distribuições para: fixedacidity, volatileacidity, citricacid, chlorides, freesulfurdioxide, totalsulfurdioxide, density, pH, sulphates, alcohol e quality.
+
+- Avaliando os valores máximos e mínimos, temos indícios de outliers para: citricacid (mínimo e máximo), residualsugar (máximo), freesulfurdioxide (máximo). 
+
+```{r}
+
+attach(white)
+ 
+
+#EstatÌsticas descritivas
+
+par (mfrow=c(3,4))
+boxplot(fixedacidity, main='fixedacidity')
+boxplot(volatileacidity , main='volatileacidity')
+boxplot(citricacid , main='citricacid')
+boxplot(residualsugar, main='residualsugar')
+boxplot(chlorides, main='chlorides')
+boxplot(freesulfurdioxide, main='freesulfurdioxide')
+boxplot(totalsulfurdioxide, main='totalsulfurdioxide')
+boxplot(density, main='density')
+boxplot(pH, main='pH')
+boxplot(sulphates, main='sulphates')
+boxplot(alcohol, main='alcohol')
+boxplot(quality, main='quality')
+```
+
+Análise:
+
+Todos os Box Plots dos vinhos brancos apresentarem Outliers (exceto a variavel alcohol), que pode ser efeito dos tamanhos de amostra, os BoxPlots com maiores quantidade de outliers são: volatileacidity, citricacid, chlorides, freesulfurdioxide, citricacid e freesulfurdioxide com valores pontuais bem distantes da distribuição. Valeria uma melhor avaliação destes pontos de medidas para verificação se realmente são pontos fora da curva esperada. 
+
+Distribuições assimetricas, com principal atenção para residualsugar, onde a assimentria se destaca na forma da caixa de dos bigodes do Box Plot. Mediana deslocada para o Q1 e bigode inferior bem menor que o superior.
+
+```{r}
+
+boxplot.stats(white$residualsugar)
+
+
+AIQ_residualsugar<-quantile(white$residualsugar,.75,type=2)-quantile(white$residualsugar,.25,type=2)
+AIQ_residualsugar
+
+limsup_residualsugar= quantile(white$residualsugar,.75,type=4)+1.5*AIQ_residualsugar
+limsup_residualsugar
+liminf_residualsugar= quantile(white$residualsugar,.25,type=2)-1.5*AIQ_residualsugar
+liminf_residualsugar
+
+```
+
+Análise:
+
+Sobre as estatísticas do BoxPlot (boxplot.stat) podemos dizer:
+- O bigode inferiro = valor mínimo (0,6), os qurtis Q1 = 1,7 e Q2 (mediana) = 5,2 e Q3 = 9,9. O bigode superior = 22,0. Como temos valores maiores que o 22,0, teremos outliers acima de 22,0. Mostrado no $out.
+- Os valores do $conf, são (segundo Chambers e McGill) aproximadamente o intervalo de confiança para a mediana.
+
+Temos também a amplitude entre quartis: Q3 - Q1 = 8,2
+
+
+
+```{r}
+
+#excluir outliers
+
+plot(quality~residualsugar)
+
+white1<-subset(white, residualsugar<=22.2)   
+
+#fix(white1)
+
+
+```
+
+Análise:
+
+Analisando o gráfico do residuo de açucar (resildualsugar) x nota de qualidade dos vinhos brancos (quality), podemos perceber uma maior concentração de resíduos de açucar para os vinhos com notas entre 5 e 6 
+
+```{r}
+
+attach(white1)
+
+summary(white1)
+
+plot(residualsugar,alcohol)
+abline(v=mean(residualsugar), col="red")
+abline(h=mean(alcohol), col="green")
+
+
+```
+
+Análise:
+
+Após tirarmos o valor de residualsugar acima de 22,2 (limite do bigode do BoxPlot), podemos analisar que existe uma correlação negativa entre as variáveis, ou seja quanto maior o teor alcolico, menor a concentração de resíduo de açucar, com exceção de valores de baixo resíduo de açucar e baixa quantidade de alcool, que possivelmente pode ser explicado por não ter açucar suficiente no início do processo (suco de uva) e que não provoca uma fermentação que eleve o nível de alcool no vinho.
+
+Ainda observando que estes valores de residuo de açucar baixo e alcool baixo, reduzem os valores de média para as duas variáveis, podendo enviezar a interpretação de uma futura análise de regressão.
+
+
+```{r}
+# matriz de correlaÁıes
+matcor <- cor(white1)
+print(matcor, digits = 2)
+
+```
+
+Análise:
+
+Observando as correlações, algumas nos chamam a atenção: 
+- residualsugar x density = 0,8315, que comprova que vinhos com muito açucar tem maior densidade, no sentido inverso;
+- vinhos com muito alcool tem menor densidade (correlação = -0,8064).
+- forte correlação entre freesulfurdioxide x totalsulfurdioxide (0,61591), devido ao livre fazer parte do total deste conservante.
+
+```{r}
+
+#library(corrgram)
+#corrgram(matcor, type = "cor", lower.panel = panel.shade, upper.panel = panel.pie)
+
+panel.cor <- function(x, y, digits=2, prefix ="", cex.cor,
+                      ...)  {
+  usr <- par("usr")
+  on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y , use = "pairwise.complete.obs")
+  txt <- format(c(r, 0.123456789), digits = digits) [1]
+  txt <- paste(prefix, txt, sep = "")
+  if (missing(cex.cor))
+    cex <- 0.8/strwidth(txt)
+  # abs(r) È para que na saÌda as correlaÁıes ficam proporcionais
+  text(0.5, 0.5, txt, cex = cex * abs(r))
+}
+#pdf(file = "grafico.pdf")
+pairs(white1, lower.panel=panel.smooth, upper.panel=panel.cor)
+
+```
+
+Análise:
+
+Agora podemos comprovar atraves de gráficos o que já foi comentado a análise da tabela de correlação
+
