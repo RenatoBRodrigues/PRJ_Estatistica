@@ -467,7 +467,9 @@ describe(dados_normalizados)
 
 ```
 
+Análise:
 
+Criamos a base de dados "dados_normalizados" normalizando (subtraindo a média e dividindo pelo desvio padrão) para uso posterior
 
 
 ```{r}
@@ -475,14 +477,29 @@ describe(dados_normalizados)
 # componentes principais - básico
 pca1 <- princomp(white1[complete.cases(white1),], cor=TRUE)
 summary(pca1)
+```
+Análise:
 
+Avaiando proposção acumulada das componentes principais (28,14%, 41,37%, ...) observamos que não houve grande ganho com relação as variáveis originais, como era esperado, já que não existem muita correlação entre as variáveis da nossa base
+
+Vamos usar a metodologia de Compenetes Principais para algumas variáveis que apresentaram alguma correlação: residualsugar, density e alcohol
+
+
+```{r}
 # componentes principais - Variáveias alta correlação
 
 white1pca <- white1[,c(-1, -2, -3, -4, -6, -7, -8, -10, -11)]
 pca2 <- princomp(white1pca[complete.cases(white1pca),], cor = TRUE)
 summary(pca2)
 
+dados_normalizados1 <- as.data.frame(scale(white1pca))
+
 ```
+
+Análise:
+
+Como era esperado, o uso de PCA para as variáveis: residualsugar, density e alcohol apresentou bom resuldado já que estas tem alta correlação entre si.
+A proposção acumulada já é de 80,40% na primeria componete
 
 ```{r}
 
@@ -490,26 +507,28 @@ summary(pca2)
 #### ANALISES FATORIAL Pacote PSYCH
 library(psych)
 
-pc <- principal(white1,3,rotate="varimax")   #principal components
+pc <- principal(white1pca,3,rotate="varimax")   #principal components
 pc
-?principal
+#?principal
 
-
-str(dados_normalizados)
-names(dados_normalizados)
 
 load=loadings(pc)
 print(load,sort=TRUE,digits=3,cutoff=0.01)     
 plot(load)                                 
-identify(load,labels=names(dados_normalizados)) 
+identify(load,labels=names(dados_normalizados1)) 
+
 ```
+
+Análise: 
+
+Este eu ainda não entendi
 
 
 ```{r}
 
 #put names of selected points onto the figure  -- to stop, click with command key
 
-plot(pc,labels=names(dados_normalizados))
+plot(pc,labels=names(dados_normalizados1))
 
 ```
 
@@ -548,6 +567,12 @@ fa.parallel (white1pca, fa="pc", show.legend=FALSE, main = "Eigenvalues dos comp
 
 ```
 
+Análise:
+
+Como visto anteriormente, escolheremos a 1a compenente principal pois ele sozinha já explica/consolida grnade parte da informação das e variáveis
+
+
+
 ```{r}
 # Rotação varimax
 
@@ -558,8 +583,10 @@ library(psych)
 vinhospca  <- principal(white1pca, nfactors=1, scores=T, rotate="varimax")
 vinhospca  # print results 
 
-fator01 = vinhospca$scores[,1]
+fator01 = vinhos1pca$scores[,1]
+fator01
 hist(fator01)
+
 
 #fator02 = vinhospca$scores[,2]
 #hist(fator02)
@@ -570,9 +597,10 @@ hist(fator01)
 #fator04 = vinhospca$scores[,4]
 #hist(fator04)
 
-#matriz<-cbind(white1pca,fator01)
-#fix(matriz)
-#attach(matriz)
+matriz<-cbind(white1pca,fator01)
+fix(matriz)
+matriz
+attach(matriz)
 
 #write.table(file='E:/LabBDT2018/Analise_vinhos.csv',matriz, sep=';',dec=',')
 
@@ -590,9 +618,9 @@ summary(Modelo1)
 
 ```{r}
 
-Residual2 <- residualsugar*residualsugar
 
-Modelo2 <- lm(quality ~ residualsugar+density+pH+alcohol+Residual2)
+
+Modelo2 <- lm(quality ~ residualsugar+density+pH+alcohol)
 
 summary(Modelo2)
 
@@ -601,6 +629,11 @@ summary(Modelo2)
 Modelo3 <- lm(quality ~ residualsugar+density+pH+alcohol)
 
 summary(Modelo3)
+
+
+Modelo4 <- lm(quality ~ mtriz$fator1)
+
+summary(Modelo4)
 
 
 
