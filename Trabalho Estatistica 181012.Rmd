@@ -1,0 +1,980 @@
+---
+title: "Trabalho Estatistica"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+### Equipe:
+#####  Carlos Alberto Figueiredo - RM330568
+#####  Daiana Cristina Zanelli Mota - RM330722
+#####  Diogo Silva Rocha - RM330717 
+#####  Renato Belandrino Rodrigues - RM330579
+
+
+
+install.packages("psych")
+install.packages("plotly")
+install.packages("gmodels")
+install.packages("corrgram")
+install.packages("lmtest")
+install.packages("rpart")
+install.packages("rpart.plot")
+install.packages("RandomForest")
+install.packages("ROCR")
+install.packages("pROC")
+install.packages("oddsratio")
+
+
+#
+```{r}
+# mostrar atÈ 2 casas decimais
+options("scipen" = 2)
+
+# Ler arquivo csv
+
+
+Vinhos <- read.csv2("BaseWineRedeWhite2018.csv", row.names=1)
+
+```
+
+```{r}
+#Vinhos <- BaseWine_Red_e_White2018
+#fix(Vinhos)
+#mostrar as vari·veis
+str(Vinhos)
+#mostra as vari·veis
+names(Vinhos)
+
+#XX Variáveis e muita informação
+
+```
+
+
+```{r}
+attach(Vinhos)
+
+# FrequÍncia absoluta 
+table(as.factor(Vinhos$quality), Vinhos$Vinho, useNA = "ifany")
+
+table(as.factor(Vinhos$quality), Vinhos$Vinho)
+```
+Análise:
+
+Avaliando as duas tabelas de frequência das notas/qualiade que comparam os vinhos tintos e brancos, vemos que não exsitem valores "brancos/NA" já que as duas tabelas apresentam as mesmas frequências.
+
+Olhando os valores entre as duas tabelas, testamos a hipótese da resposta de qualidade ser diverente entre os vinhos Brancos e Tintos.
+Para isso fizemos um Teste para duas amostras
+
+```{r}
+Quality <- split(Vinhos, Vinhos$Vinho)
+
+t.test(Quality$WHITE$quality, Quality$RED$quality)
+
+```
+Análise:
+
+A partir do valor do p-value que é menor que o risco alfa máximo de 5%, podemos dizer que os vinhos Brancos e Tintos tem valores médios de notas diferentes, já que o p-value < 2.2e-16, sendo a médio dos vinhos brancos maior que os tintos (5,87 e 5,63 respectivamente)
+
+```{r}
+# 2-Way Cross Tabulation
+library(gmodels)
+CrossTable(as.factor(Vinhos$quality), Vinhos$Vinho) 
+``` 
+Análise:
+
+A partir da tabela cruzada entre tipo do vinho (Branco e Tinto) e as notas de qualidade, podemos perceber a maior frequencia geral é de notas 6 (43,7%).
+
+Mas olhando para cada tipo de vinho individualmente, a nota 6 é mais frequente para o vinho branco(44,9%), enquanto a nota mais frenquente para o vinho tinto é 5 (42,6%), o que ajuda a confirmar a diferença entre os vinhos, com relação as notas de qualidade.
+
+
+
+```{r}
+
+summary(Vinhos)
+
+```
+Análise:
+
+Olhando as estatísticas básicas de todas as proprieddes, podemos perceber alguns pontos:
+
+- Médias próximas as medianas, que indica possível simetria nas distribuições para: fixedacidity, volatileacidity, citricacid, chlorides, freesulfurdioxide, totalsulfurdioxide, density, pH, sulphates, alcohol e quality.
+
+- Avaliando os valores máximos e mínimos, temos indícios de outliers para: citricacid (mínimo e máximo), residualsugar (máximo), chloride (máximo), freesulfurdioxide (máximo), sulphates (máximo). 
+
+```{r}
+
+
+aggregate (Vinhos,
+           by = list(Vinho),
+           FUN =  "mean")
+```
+Análise:
+
+Função retorna a media de todas as vaiáveis numéricas para os vinhos Brancos e Tintos
+Pontos que chamam a atenção:
+
+- residualsugar é muito maior para os brancos apesar do alcohol ter valores próximos.
+
+- freesulfurdioxide e totalsulfurdioxide é maior nos vinhos brancos que nos tintos. Este conservante também serve para previnir o escurecimento dos vinhos. Por isso, talvez, sua maior concentração nos Brancos.
+
+O cometário "argument is not numeric or logical: returning NAargument is not numeric or logical: returning NA" é devido a variável vinho que não é numérica
+
+```{r}
+
+
+mean(Vinhos$fixedacidity) # mÈdia
+
+median(Vinhos$fixedacidity) # mÈdiana
+
+quantile(Vinhos$fixedacidity,type=4)  # Quartis
+
+quantile(Vinhos$fixedacidity,.65,type=4) # exato percentil
+
+range(Vinhos$fixedacidity)  # amplitude
+
+diff(range(Vinhos$fixedacidity)) #diferenÁa entre o maior e o menor valor
+
+min(Vinhos$fixedacidity)  # valor mÌnimo de x
+
+max(Vinhos$fixedacidity)  # valor m·ximo de x
+
+var(Vinhos$fixedacidity) # para obter a vari‚ncia
+
+sd(Vinhos$fixedacidity)  # para obter o desvio padr„o
+
+CV_fixedacidity<-sd(Vinhos$fixedacidity)/mean(Vinhos$fixedacidity)*100  # para obter o coefiiente de variaÁ„o
+CV_fixedacidity
+
+```
+Análise:
+
+As funções retornam estaísticas decritivas para a variavel fixedacidity, inclusive o Coeficiente de Variação (CV).
+
+CV = Em teoria das probabilidades e estatística, o coeficiente de variação (CV), também conhecido como desvio padrão relativo (DPR), é uma medida padronizada de dispersão de uma distribuição de probabilidade ou de uma distribuição de frequências. É frequentemente expresso como uma porcentagem, sendo definido como a razão do desvio padrão pela média  (ou seu valor absoluto. O CV ou DPR é amplamente usado em química analítica para expressar a precisão e a repetitividade de um ensaio. Também é comumente usado em campos como engenharia e física quando se fazem estudos de garantia de qualidade e avaliações de repetitividade e reprodutibilidade. O CV também é usado por economistas e investidores em modelos econômicos e na determinação da volatilidade de um valor mobiliário. Fonte: Wikipédia
+
+
+```{r}
+
+#comando para gerar em 3 linhas e 4 colunas os histogramas
+par (mfrow=c(3,4))
+hist(fixedacidity)
+hist(volatileacidity)
+hist(citricacid )
+hist(residualsugar)
+hist(chlorides)
+hist(freesulfurdioxide)
+hist(totalsulfurdioxide)
+hist(density)
+hist(pH)
+hist(sulphates)
+hist(alcohol)
+hist(quality)
+```
+Análise:
+
+Avaliando os histogrmas, alguns pontos chamam a atenção:
+
+- As escalas estão bem abertas, indicando a presença de Outliers, principalmente para: volatileacidity, citricacid, chlorides, freesulfurdioxide
+
+- Distribuições assimetricas, com mínimos limitados pelo valor zero, por exemplo: volatileacidity, residualsugar, chlorides, freesulfurdioxide
+
+```{r}
+
+
+hist(quality, col=c("pink"), col.main="darkgray", prob=T)
+```
+ Análise:
+ 
+- O histograma da quality, por ter valores inteiros, o histograma parece "dentado" mas que não invalida a análise de uma distribuição simétrica, possivelmente Normal
+```{r}
+
+attach(Vinhos)
+
+#comando para gerar em 3 linhas e 4 colunas os histogramas
+par (mfrow=c(3,4))
+boxplot(fixedacidity, main='fixedacidity')
+boxplot(volatileacidity , main='volatileacidity')
+boxplot(citricacid , main='citricacid')
+boxplot(residualsugar, main='residualsugar')
+boxplot(chlorides, main='chlorides')
+boxplot(freesulfurdioxide, main='freesulfurdioxide')
+boxplot(totalsulfurdioxide, main='totalsulfurdioxide')
+boxplot(density, main='density')
+boxplot(pH, main='pH')
+boxplot(sulphates, main='sulphates')
+boxplot(alcohol, main='alcohol')
+boxplot(Vinhos$quality, main='quality')
+```
+Análise:
+
+As análises dos Box Plots validam as que já fizemos para os histogramas.
+
+Apesar de todos os Box Plots apresentarem Outliers, que pode ser efeito dos tamanhos de amostra, os BoxPlots com maiores quantidade de outliers são: volatileacidity, citricacid, chlorides, freesulfurdioxide. citricacid, freesulfurdioxide e alcohol com valores pontuais bem distantes da distribuição. Valeria uma melhor avaliação destes pontos de medidas para verificação se realmente são pontos fora da curva esperada. 
+
+Distribuições assimetricas, com principal atenção para residualsugar, onde a assimentria se destaca na forma da caixa de dos bigodes do Box Plot. Mediana deslocada para o Q1 e bigode inferior bem menor que o superior.
+
+```{r}
+
+boxplot(quality ~ Vinho, main='quality')
+
+boxplot(fixedacidity ~ Vinho, main='fixedacidity',col=c('red','blue'))
+boxplot(volatileacidity ~ Vinho , main='volatileacidity')
+boxplot(citricacid ~ Vinho, main='citricacid')
+boxplot(residualsugar ~ Vinho, main='residualsugar',col=c('red','blue'))
+boxplot(chlorides ~ Vinho, main='chlorides')
+boxplot(freesulfurdioxide ~ Vinho, main='freesulfurdioxide')
+boxplot(totalsulfurdioxide ~ Vinho, main='totalsulfurdioxide')
+boxplot(density ~ Vinho, main='density')
+boxplot(pH ~ Vinho, main='pH')
+boxplot(sulphates ~ Vinho, main='sulphates')
+boxplot(alcohol ~ Vinho, main='alcohol')
+```
+Análise:
+
+Os Box Plots para todas as características, agora comparando os vinhos brancos e tintos podem servir para entender características que podem distinguir entre estes dois tipos e vinhos, como já fizemos com a quality, usando o teste de hipótese.
+
+Olhando os Box Plots, outras características que podem ser diferentes por tipo de vinho são: volatileacidity, chlorides, freesulfurdioxide e totalsulfurdioxide (já comentado nas estatísticas descritivas)
+
+
+```{r}
+
+# Gr·fico de dispers„o ( pch=caracter, lwd=largura)
+
+plot(freesulfurdioxide~totalsulfurdioxide)
+plot(freesulfurdioxide~totalsulfurdioxide, pch=1, lwd=3)
+
+plot(freesulfurdioxide~totalsulfurdioxide)
+abline(h=mean(freesulfurdioxide), col="red")
+abline(v=mean(totalsulfurdioxide), col="green")
+
+```
+Análise:
+
+O Gráfico de dispersão mostra a relação de previsão entre as variáveis.
+Neste caso entre freesulfurdioxide e totalsulfurdioxide.
+
+Estas variáveis aparentam ter uma correlação forte (núvem de pontos com pouca dispersão) e positiva (inclinação positiva/coeficiente angular > 0), indicando que a partir da informação sobre totalsulfurdioxide pode prever o valor de freesulfurdioxide, com boa acuracidade.
+
+A linha verde representa a média do totalsulfurdioxide e a vermelha a média do freesulfurdioxide. O ponto onde onde as retas se encontram é um dos pontos que fará parte da regressão linear entre as variáveis e da uma ideia de centramento desta relação
+
+```{r}
+
+attach(Vinhos)
+Vinhos$fx_redSugar <- cut(residualsugar,breaks=c(0,10,20,30,max(residualsugar)))  
+#Vinhos$fx_redSugar  
+str(Vinhos)
+CrossTable( Vinhos$fx_redSugar , Vinhos$Vinho) 
+
+```
+Análise:
+
+Olahndo os intervalos de resíduos de açucar (faixas de 10 em 10), podemos ver que a maior concentração esta na faixa entre 0 e 10 (81,5%)
+
+O mesmo comprtamento se aplica se olharmos por tipo de vinho: Brancos (75,6%) e tintos (99,3%). O que indica que os vinhos tintos tem menos açucar, pois sua concentração esta na faixa de 0 a 10 (faixa inicial) de concentração de resíduo de açucar. E os brancos apresentam maiores concetrações nas faixas superiores: Faixa de 10 a 20, Brancos (24%) x Tintos (0,7%) 
+
+
+```{r}
+
+attach(Vinhos)
+
+
+library(psych)
+
+describe(Vinhos)
+
+# describe
+# A data.frame of the relevant statistics:
+# item name
+# item number
+# number of valid cases
+# mean
+# standard deviation
+# trimmed mean (with trim defaulting to .1)
+# median (standard or interpolated
+# mad: median absolute deviation (from the median)
+# minimum
+# maximum
+# skew
+# kurtosis
+# standard error
+
+
+summary(Vinhos)
+white <- subset(Vinhos, Vinho=="WHITE", select=c(quality,fixedacidity,volatileacidity,citricacid,residualsugar,
+                                                 chlorides,freesulfurdioxide,totalsulfurdioxide,density,pH,
+                                                 sulphates,alcohol))
+
+```
+
+Análise:
+
+Criamos um Dataset para os vinhos Brancos, com todas as variáveis usadas anteriormente
+
+
+```{r}
+
+#EstatÌsticas descritivas
+summary(white)
+ 
+str(white)
+
+```
+
+Análise:
+
+Olhando as estatísticas básicas de todas as proprieddes dos vinhos brancos, podemos perceber alguns pontos:
+
+- Médias próximas as medianas, que indica possível simetria nas distribuições para: fixedacidity, volatileacidity, citricacid, chlorides, freesulfurdioxide, totalsulfurdioxide, density, pH, sulphates, alcohol e quality.
+
+- Avaliando os valores máximos e mínimos, temos indícios de outliers para: citricacid (mínimo e máximo), residualsugar (máximo), freesulfurdioxide (máximo). 
+
+```{r}
+
+attach(white)
+ 
+
+#EstatÌsticas descritivas
+
+par (mfrow=c(3,4))
+boxplot(fixedacidity, main='fixedacidity')
+boxplot(volatileacidity , main='volatileacidity')
+boxplot(citricacid , main='citricacid')
+boxplot(residualsugar, main='residualsugar')
+boxplot(chlorides, main='chlorides')
+boxplot(freesulfurdioxide, main='freesulfurdioxide')
+boxplot(totalsulfurdioxide, main='totalsulfurdioxide')
+boxplot(density, main='density')
+boxplot(pH, main='pH')
+boxplot(sulphates, main='sulphates')
+boxplot(alcohol, main='alcohol')
+boxplot(quality, main='quality')
+```
+
+Análise:
+
+Todos os Box Plots dos vinhos brancos apresentarem Outliers (exceto a variavel alcohol), que pode ser efeito dos tamanhos de amostra, os BoxPlots com maiores quantidade de outliers são: volatileacidity, citricacid, chlorides, freesulfurdioxide, citricacid e freesulfurdioxide com valores pontuais bem distantes da distribuição. Valeria uma melhor avaliação destes pontos de medidas para verificação se realmente são pontos fora da curva esperada. 
+
+Distribuições assimetricas, com principal atenção para residualsugar, onde a assimentria se destaca na forma da caixa de dos bigodes do Box Plot. Mediana deslocada para o Q1 e bigode inferior bem menor que o superior.
+
+```{r}
+
+boxplot.stats(white$residualsugar)
+
+
+AIQ_residualsugar<-quantile(white$residualsugar,.75,type=2)-quantile(white$residualsugar,.25,type=2)
+AIQ_residualsugar
+
+limsup_residualsugar= quantile(white$residualsugar,.75,type=4)+1.5*AIQ_residualsugar
+limsup_residualsugar
+liminf_residualsugar= quantile(white$residualsugar,.25,type=2)-1.5*AIQ_residualsugar
+liminf_residualsugar
+
+```
+
+Análise:
+
+Sobre as estatísticas do BoxPlot (boxplot.stat) podemos dizer:
+- O bigode inferiro = valor mínimo (0,6), os qurtis Q1 = 1,7 e Q2 (mediana) = 5,2 e Q3 = 9,9. O bigode superior = 22,0. Como temos valores maiores que o 22,0, teremos outliers acima de 22,0. Mostrado no $out.
+- Os valores do $conf, são (segundo Chambers e McGill) aproximadamente o intervalo de confiança para a mediana.
+
+Temos também a amplitude entre quartis: Q3 - Q1 = 8,2
+
+
+
+```{r}
+
+#excluir outliers
+
+plot(quality~residualsugar)
+
+white1<-subset(white, residualsugar<=22.2)   
+
+#fix(white1)
+
+
+```
+
+Análise:
+
+Analisando o gráfico do residuo de açucar (resildualsugar) x nota de qualidade dos vinhos brancos (quality), podemos perceber uma maior concentração de resíduos de açucar para os vinhos com notas entre 5 e 6 
+
+```{r}
+
+attach(white1)
+
+summary(white1)
+
+plot(residualsugar,alcohol)
+abline(v=mean(residualsugar), col="red")
+abline(h=mean(alcohol), col="green")
+
+
+```
+
+Análise:
+
+Após tirarmos o valor de residualsugar acima de 22,2 (7 valores acima do limite do bigode do BoxPlot), podemos analisar que existe uma correlação negativa entre as variáveis, ou seja quanto maior o teor alcolico, menor a concentração de resíduo de açucar, com exceção de valores de baixo resíduo de açucar e baixa quantidade de alcool, que possivelmente pode ser explicado por não ter açucar suficiente no início do processo (suco de uva) e que não provoca uma fermentação que eleve o nível de alcool no vinho.
+
+Ainda observando que estes valores de residuo de açucar baixo e alcool baixo, reduzem os valores de média para as duas variáveis, podendo enviezar a interpretação de uma futura análise de regressão.
+
+A base de dados white1 é a base de vinhos brancos sem os Outliers, que será usada a partir de agora
+
+
+```{r}
+# matriz de correlaÁıes
+matcor <- cor(white1)
+print(matcor, digits = 2)
+
+```
+
+Análise:
+
+Observando as correlações, algumas nos chamam a atenção: 
+- residualsugar x density = 0,8315, que comprova que vinhos com muito açucar tem maior densidade, no sentido inverso;
+- vinhos com muito alcool tem menor densidade (correlação = -0,8064).
+- forte correlação entre freesulfurdioxide x totalsulfurdioxide (0,61591), devido ao livre fazer parte do total deste conservante.
+
+```{r}
+
+#install.packages(corrgram)
+#library(corrgram)
+#corrgram (matcor, type = "cor", lower.panel = panel.shade, upper.panel = panel.pie)
+
+panel.cor <- function(x, y, digits=2, prefix ="", cex.cor,
+                      ...)  {
+  usr <- par("usr")
+  on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y , use = "pairwise.complete.obs")
+  txt <- format(c(r, 0.123456789), digits = digits) [1]
+  txt <- paste(prefix, txt, sep = "")
+  if (missing(cex.cor))
+    cex <- 0.8/strwidth(txt)
+  # abs(r) È para que na saÌda as correlaÁıes ficam proporcionais
+  text(0.5, 0.5, txt, cex = cex * abs(r))
+}
+#pdf(file = "grafico.pdf")
+pairs(white1, lower.panel=panel.smooth, upper.panel=panel.cor)
+
+```
+
+Análise:
+
+Agora podemos comprovar atraves de gráficos o que já foi comentado a análise da tabela de correlação
+
+
+
+```{r}
+
+#avaliar inicio
+dados_normalizados = as.data.frame(scale(white1))
+
+names(dados_normalizados)
+
+summary(dados_normalizados)
+describe(dados_normalizados)
+
+```
+
+Análise:
+
+Criamos a base de dados "dados_normalizados" normalizando (subtraindo a média e dividindo pelo desvio padrão) para uso posterior
+
+
+```{r}
+
+# componentes principais - básico
+pca1 <- princomp(white1[complete.cases(white1),], cor=TRUE)
+summary(pca1)
+```
+Análise:
+
+Avaiando proposção acumulada das componentes principais (28,14%, 41,37%, ...) observamos que não houve grande ganho com relação as variáveis originais, como era esperado, já que não existem muita correlação entre as variáveis da nossa base
+
+Vamos usar a metodologia de Compenetes Principais para algumas variáveis que apresentaram alguma correlação: residualsugar, density e alcohol. Para isso criaremos uma base de dados "white1pca" somente com estas variáveis
+
+
+```{r}
+# componentes principais - Variáveias alta correlação
+
+white1pca <- white1[,c(-1, -2, -3, -4, -6, -7, -8, -10, -11)]
+pca2 <- princomp(white1pca[complete.cases(white1pca),], cor = TRUE)
+summary(pca2)
+
+dados_normalizados1 <- as.data.frame(scale(white1pca))
+
+```
+
+Análise:
+
+Como era esperado, o uso de PCA para as variáveis: residualsugar, density e alcohol apresentou bom resuldado já que estas tem alta correlação entre si.
+A proposção acumulada já é de 80,40% na primeria componete
+
+
+
+
+
+```{r}
+
+library(psych)
+
+# Escolher os componentes principais
+fa.parallel (white1pca, fa="pc", show.legend=FALSE, main = "Eigenvalues dos componentes 
+             principais")
+
+
+```
+
+Análise:
+
+Como visto anteriormente, escolheremos a 1a compenente principal pois ele sozinha já explica/consolida grnade parte da informação das e variáveis
+
+
+
+```{r}
+# Rotação varimax
+
+
+library(psych)
+# Varimax Rotated Principal Components
+# # extrair os fatores
+vinhospca  <- principal(white1pca, nfactors=1, scores=T, rotate="varimax")
+vinhospca  # print results 
+
+fator01 = vinhospca$scores[,1]
+hist(fator01)
+
+
+white1<-cbind(white1,fator01)
+#fix(matriz)
+
+plot(quality,fator01)
+
+matcor <- cor(white1)
+print(matcor, digits = 2)
+
+#attach(matriz)
+
+#write.table(file='E:/LabBDT2018/Analise_vinhos.csv',matriz, sep=';',dec=',')
+
+
+```
+
+Análise:
+
+Incluimos no banco de dados white1 uma coluna fator01 que é a combinação , via método PCA, das variáveis residualsugar, density e alcohol.
+O fator01 poderá substituir estas 3 variáveis em outros modelos com pequenas perdas, tendo um modelo redizido (menos variáveis).
+
+Podemos verificar isso olhando as correlações: altas entre o fator01 e as 3 variáveis (residualsugar 85,57%, density 98,49% e alcohol -84,25%) e no mesmo paramar com a variável de resposta quality -31,74% que as outras 3
+
+
+## Partindo agora para os modelos de predição
+
+### Começamos com regressão linerar
+
+```{r}
+
+attach(white1)
+
+Modelo1 <- lm(quality ~ fixedacidity+volatileacidity+citricacid+residualsugar+chlorides+freesulfurdioxide+totalsulfurdioxide+density+pH+sulphates+alcohol)
+
+summary(Modelo1)
+```
+
+Análise:
+
+O modelo com todas as variáveis tem um R2 Ajustado de 28,57% e Residual Standard Error de 0,7489
+Parametros para escolher o melhor modelo é um maior R2 ajustado e/ou um menor Residual Standard Error
+
+Com temos alguma variáveis com alto p-Valor, valor tira-los do modelo (citricacid, chlorides, totalsulfurdioxide), abaixo
+
+
+```{r}
+
+Modelo2 <- lm(quality ~ fixedacidity+volatileacidity+residualsugar+freesulfurdioxide+density+pH+sulphates+alcohol)
+
+summary(Modelo2)
+```
+
+Análise:
+
+O modelo sem as variáveis não siginificativas tem um R2 Ajustado de 28,61% (levemente melhor que o anterior) e Residual Standard Error de 0,7487 (leventente melhor que o anterior), mas com um modelo com menos variáveis
+
+
+Agora vamos testar um modelo com o PCA trabalhado acima fator01, tirando as variáveis que o compoem (residualsugar, density e alcohol)
+
+```{r}
+
+Modelo3 <- lm(quality ~ fixedacidity+volatileacidity+freesulfurdioxide+pH+sulphates+fator01)
+
+summary(Modelo3)
+
+```
+Análise:
+
+O modelo com PCA tem um R2 Ajustado de 15,38% (pior que o anterior) e Residual Standard Error de 0,8151 (pior que o anterior), mas com um modelo com menos variáveis. Não avaliamos como boa este modelo. 
+
+
+Agora vamos testar um modelo com o PCA trabalhado acima fator01, tirando as variáveis que o compoem (residualsugar, density e alcohol) e também as não significativas no modelo acima (pH)
+
+
+
+```{r}
+
+Modelo4 <- lm(quality ~ fixedacidity+volatileacidity+freesulfurdioxide+sulphates+fator01)
+
+summary(Modelo4)
+
+```
+
+Análise:
+
+O modelo com PCA e sem pH tem um R2 Ajustado de 15,38% (igual o anterior) e Residual Standard Error de 0,8151 (igual o anterior), mas com um modelo com menos variáveis. Não avaliamos como boa este modelo e descartaremos o uso de PCA nesta regressão
+
+
+Sendo assim, avaliamos que o melhor modelo é o 2: Sem PCA e com somente as varíaveis que foram significativas.
+O modelo sem as variáveis não siginificativas tem um R2 Ajustado de 28,61%  e Residual Standard Error de 0,7487, mas com um modelo com menos variáveis
+
+Vamos agora avaliar como o método Stepwise escolheria quais as variáveis que este modelo de previsão, iniciando com todos as variáveis
+
+```{r}
+
+step(Modelo1)
+
+```
+Análise:
+
+A conclusão é a mesma do Modelo2. O que confirma o que fizemos até agora.
+
+O modelo sem PCA e sem as variáveis não siginificativas tem um R2 Ajustado de 28,61% (levemente melhor que o anterior) e Residual Standard Error de 0,7487 (leventente melhor que o anterior), mas com um modelo com menos variáveis
+
+Vamos agora analisar os resíduos: contra os valores ajustados, sua normalidade e aleatoriedade
+
+```{r}
+
+library(lmtest)
+
+plot(Modelo2, which = 1)
+plot(Modelo2, which = 2)
+
+
+dwtest (Modelo2$residuals ~ Modelo2$fitted.values)
+
+
+```
+
+Análise:
+
+Temos alguns pontos (resíduos) um pouco grandes (> 3) para valores ajustados maiores (>6), que também aparecem nas caudas do gráfico de probabilidade Normal.
+O teste de DW para aleatoriedade tem P-valor um pouco acima de 5% (6,2%)
+
+Com isso ficaremos com este modelo, com atenção ao comportamento de previsão para notas de qualidade >6
+
+
+Vamos agora para análises pela árvore de regressão
+
+```{r}
+
+## Árvore de Regressão
+
+
+attach(white1)
+
+
+#install.packages("rpart")
+#install.packages("rpart.plot")
+library(rpart)
+library(rpart.plot)
+
+modelo_Valor_tree <- rpart (quality ~ fixedacidity+volatileacidity+citricacid+residualsugar+chlorides+freesulfurdioxide+totalsulfurdioxide+density+pH+sulphates+alcohol, cp = 0.001,minsplit = 5,maxdepth=10)
+
+
+# Faz o Gráfico
+rpart.plot(modelo_Valor_tree, type=0, extra="auto", under=TRUE, clip.right.labs=TRUE,
+           fallen.leaves=FALSE,   digits=2, varlen=-10, faclen=20,
+           cex=0.4, tweak=1.7,
+           compress=TRUE,
+           snip=FALSE)
+
+Val_pred_tree <- predict(modelo_Valor_tree,interval = "prediction", level = 0.95) 
+str(Val_pred_tree)
+
+
+mse_tree <- mean((quality - Val_pred_tree)^2)
+sqrt(mse_tree)
+
+# grafico residuo
+rs <- Val_pred_tree- quality
+plot(predict(modelo_Valor_tree), rs, xlab = "Com Árvore de Regressão",ylab = "Residuos")
+abline(h = 0, lty = 2)
+
+
+qqnorm(rs)
+qqline(rs)
+dwtest (rs ~ Val_pred_tree)
+
+
+
+```
+
+Análise:
+
+A Arvore de Regressão Residual Standard Error de 0,5914 (melhor que o melhor modelo de Regressão linear 0,7487)
+
+Analisando os resíduos, não vemos valores maiores do que 3 desvios padrão, nem abaixo nem acima.
+Olhand o gráfico de probabilidade Normal, a distribuição parece normal 
+O teste de DW para aleatoriedade tem P-valor de 0,2%. Então podemos assumir a aleatoriedade dos resíduos
+
+### Com isso podemos concluir que a Arvore de Regressão apresenta resultados melhores do que a Regressão linear para prever a quality dos vinhos brancos, com base nos dads que temos
+
+
+
+Para tentar melhor nossa previsão, vamos transformar a variável de resposta "quality" em uma variável discreta.
+A variável será "Bom_ruim", onde 0 será para vinhos ruins (quality = 3, 4, 5) e 1 será para vinhos bons (quality = 7, 8, 9)
+
+Criaremos um novo banco de dados chamado white2 onde só teremos os vinhos com quality diferente de 6
+
+```{r}
+
+white1[,"Bom_ruim"] <- ifelse(white1$quality == 3, 0, ifelse(white1$quality == 4, 0, ifelse(white1$quality == 5, 0, ifelse(white1$quality == 7, 1, ifelse(white1$quality == 8, 1, ifelse(white1$quality == 9, 1, 6))))))
+
+
+white2 <- subset(white1, white1$Bom_ruim != 6)
+summary(white2)
+
+
+```
+
+Análie:
+
+Banco de dados criado, com todas as variaveis, inclusive mantivemos a quality, e agora com uma variavel dummy "Bom_ruim", onde os vinhos de quality baixa (3,4 e 5) ficaram com 0, as quality 6 foram tiradas do banco de dados e as quality altas (7,8 e 9) ficaram com 1
+
+
+```{r}
+
+attach(white2)
+par (mfrow=c(3,4))
+plot (fixedacidity, Bom_ruim)
+plot (volatileacidity, Bom_ruim)
+plot (citricacid, Bom_ruim)
+plot (residualsugar, Bom_ruim)
+plot (chlorides, Bom_ruim)
+plot (freesulfurdioxide, Bom_ruim)
+plot (totalsulfurdioxide, Bom_ruim)
+plot (density, Bom_ruim)
+plot (pH, Bom_ruim)
+plot (sulphates, Bom_ruim)
+plot (alcohol, Bom_ruim)
+
+
+
+```
+
+Análise
+
+Estes gráficos entre todas as variaveis independentes e a dummy Bom_ruim deve nos dar uma visão das variaveis independentes que tem maior impacto na dummy.
+O gráficos nào foram muito conclusivos pois existem malores de 0 e 1 para Bom_ruim em todo o range de valores em todas as variaveis independentes.
+
+
+Com isso vamos para a regressão logistica onde podemremos, olhando todas as variaveis simultaneamente (diferente dos gráficos), identificar as variaveis mais significativas atraves dos p-valores 
+
+```{r}
+
+attach(white2)
+
+
+Modelo_RegLog0 <- glm(Bom_ruim ~ fixedacidity+volatileacidity+citricacid+residualsugar+chlorides+freesulfurdioxide+totalsulfurdioxide+density+pH+sulphates+alcohol, family=binomial(link="logit"))
+
+summary(Modelo_RegLog0)
+predict0 <- predict(Modelo_RegLog0)
+
+```
+
+Análise:
+
+Temos um modelo de Rgressão Logistica com algumas variaveis com p-valor > 5% (citricacid, chlorides, freesulfurdioxide e totalsulfurdioxide)
+
+Este modelo também apresenta os paramentros que ajudam a avaliar a qualidade do modelo:
+Residual deviance: 2116.1 e 
+AIC: 2140.1
+Que quanto menor melhor a qualidade do modelo
+
+Com base nisso, fazer avaliar o modelo de Regressão Logística sem as 4 variaveis não significativas e verificar qual fica melhor  
+
+
+```{r}
+
+attach(white2)
+
+Modelo_RegLog1 <- glm(Bom_ruim ~ fixedacidity+volatileacidity+residualsugar+density+pH+sulphates+alcohol, family=binomial(link="logit"))
+
+summary(Modelo_RegLog1)
+```
+
+Análise:
+
+Temos um modelo de Rgressão Logistica com nenhuma variaveis com p-valor > 5%
+
+Este modelo também apresenta os paramentros que ajudam a avaliar a qualidade do modelo:
+Residual deviance: 2128.6 e 
+AIC: 2144.6
+
+Como os valores de Residual deviance e AIC são praticamente os mesmo do modelo completo (com todas as variaveis independentes), decidimos ficar com este modelo que tem menos variaveis
+
+
+Agora vamos analisar a tabela de confundimento, os paramentros de acurácia, sensibilidade e outros.
+
+Vamos também olhar o Gráfico ROC, com a sua area
+
+```{r}
+predict1 <- predict(Modelo_RegLog1)
+
+
+confundimento1 <- table(white2$Bom_ruim, predict1 > 0.5)
+
+print("Tabela de Confundimento")
+print(confundimento1)
+
+vp1 <- c(confundimento1 [1,1])
+fp1 <- c(confundimento1 [1,2])
+fn1 <- c(confundimento1 [2,1])
+vn1 <- c(confundimento1 [2,2])
+
+neg1 <- (fn1+vn1)
+pos1 <- (vp1+fp1)
+
+acuracia1= (vp1 + vn1) / (pos1 + neg1)
+sensibilidade1 = vp1 / (vp1 + fn1)
+especificidade1 = vn1 / (vn1 + fp1)
+eficiencia1 = (sensibilidade1 + especificidade1) / 2
+valor_preditivo_positivo1 = vp1 / (vp1 + fp1)
+valor_preditivo_negativo1 = vn1 / (vn1 + fn1)
+
+print ("Acuracia"); acuracia1
+print ("Sensibilidade"); sensibilidade1
+print ("Especificidade"); especificidade1
+print ("Eficiencia"); eficiencia1
+print ("Valor Preditivo Positivo"); valor_preditivo_positivo1
+print ("Valor Preditivo Negativo"); valor_preditivo_negativo1
+
+
+library(pROC)
+
+roc1 <- roc (white2$Bom_ruim, predict1, plotit = TRUE, add.roc = FALSE)
+plot.roc (white2$Bom_ruim, predict1, plotit = TRUE, add.roc = FALSE)
+roc1
+ci(roc1)
+
+```
+Análise:
+
+Para o modelo com menos variaveis independentes, calculamos a matriz de confundimento que mostra no nosso modelo de regressão logistica as vezes que ele acerta a classificação dos vinhos (bom = bom e ruim = ruim) e também os erros (falso possitivo e falso negativo)
+
+E os indicadores de Acuracia, Sensibilidade e outros
+
+Fizemos o Gráfico ROC, que apresenta boa curvatura e area abaixo da curva de 0.8963, indicando um bom modelo
+
+Agora vamos fazer a arvore de decisão e com estes parametros que acabamos de calcular, vamos avaliar qual o melhor modelo de classificação para esta base de dados, regressão logistica ou arvore de decisão
+
+
+```{r}
+
+attach(white2)
+
+Arvore_decisao1 <- rpart(Bom_ruim ~ fixedacidity+volatileacidity+citricacid+residualsugar+chlorides+freesulfurdioxide+totalsulfurdioxide+density+pH+sulphates+alcohol)
+
+plot(Arvore_decisao1)
+text(Arvore_decisao1, pretty = 0, cex = 0.6)
+
+
+summary(Arvore_decisao1)
+
+
+```
+```{r}
+
+predict2 <- predict(Arvore_decisao1)
+
+
+confundimento2 <- table(white2$Bom_ruim, predict2 > 0.5)
+
+print("Tabela de Confundimento")
+print(confundimento1)
+
+vp2 <- c(confundimento2 [1,1])
+fp2 <- c(confundimento2 [1,2])
+fn2 <- c(confundimento2 [2,1])
+vn2 <- c(confundimento2 [2,2])
+
+neg2 <- (fn2+vn2)
+pos2 <- (vp2+fp2)
+
+acuracia2= (vp2 + vn2) / (pos2 + neg2)
+sensibilidade2 = vp2 / (vp2 + fn2)
+especificidade2 = vn2 / (vn2 + fp2)
+eficiencia2 = (sensibilidade2 + especificidade2) / 2
+valor_preditivo_positivo2 = vp2 / (vp2 + fp2)
+valor_preditivo_negativo2 = vn2 / (vn2 + fn2)
+
+print ("Acuracia"); acuracia2
+print ("Sensibilidade"); sensibilidade2
+print ("Especificidade"); especificidade2
+print ("Eficiencia"); eficiencia2
+print ("Valor Preditivo Positivo"); valor_preditivo_positivo2
+print ("Valor Preditivo Negativo"); valor_preditivo_negativo2
+
+
+library(pROC)
+
+roc2 <- roc (white2$Bom_ruim, predict2, plotit = TRUE, add.roc = FALSE)
+plot.roc (white2$Bom_ruim, predict2, plotit = TRUE, add.roc = FALSE)
+roc2
+ci(roc2)
+
+```
+
+Análise:
+
+Como na regressão logística, agora para a ametriz de decisão, calculamos a matriz de confundimento que mostra no nosso modelo de regressão logistica as vezes que ele acerta a classificação dos vinhos (bom = bom e ruim = ruim) e também os erros (falso possitivo e falso negativo)
+
+E os indicadores de Acuracia, Sensibilidade e outros
+
+
+Fizemos o Gráfico ROC, que apresenta boa curvatura e area abaixo da curva de 0.8951, indicando um bom modelo
+
+
+Vamos comparar os indicadores entre os dos métodos (regressão logistica e Arvore de decisão)
+
+```{r}
+
+print("Delte entre Regressão Logisitca e Arvore de Decisão")
+
+print ("Acuracia"); acuracia1 - acuracia2
+print ("Sensibilidade");  sensibilidade1 - sensibilidade2
+print ("Especificidade"); especificidade1 - especificidade2
+print ("Eficiencia"); eficiencia1 - eficiencia2
+print ("Valor Preditivo Positivo"); valor_preditivo_positivo1 - valor_preditivo_positivo2
+print ("Valor Preditivo Negativo"); valor_preditivo_negativo1 - valor_preditivo_negativo2
+print("Area abaixo do Grafico ROC"); roc1$auc - roc2$auc
+
+```
+
+Análise:
+
+Para estes dados, não existe um método que tenha todos os indicadores melhores na comparação
+A regressão logística é melhor no:
+- Especificidade
+- Valor preditivo positivo
+- Area abaixo do Gráfico ROC
+
+Enquanto a arvore de decisão é melhor no:
+- Acuracia
+- Sensibilidade
+- Eficiencia
+- Valor Preditivo Negativo
+
+Se escolher como critério a qualidade do modelo para escolher vinhos bons, escolheríamos a Regressão Logisitca pela area abaixo do Gráfico ROC e pelo Valor Preditivo Positivo, apesar da pequena diferença entre os modelos
+
+
